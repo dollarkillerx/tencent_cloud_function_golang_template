@@ -12,20 +12,14 @@ import (
 
 // Request api 请求默认会解析JSON
 type Request struct {
-	TaskID string                            `json:"task_id"`
-	Data   map[string]map[string]interface{} `json:"data"`
+	Url             string                 `json:"url"`              // 地址
+	Title           string                 `json:"title"`            // title
+	Data            []byte                 `json:"data"`             // 数据源
+	ApplicationType string                 `json:"application_type"` // 类型
+	DownloadTime    int                    `json:"download_time"`    // 下载日期
+	ReleaseTime     int                    `json:"release_time"`     // 发布日期
+	Other           map[string]interface{} `json:"other"`
 }
-
-/**
-{
-	"task_id": "001",
-	"data": {
-		"level1": {
-			"url": "https://www.baidu.com/"
- 		}
-	}
-}
-*/
 
 //// Response api 默认会解析JSON返回
 //type Response struct {
@@ -46,16 +40,7 @@ func spider(ctx context.Context, event DefineEvent) (*Request, error) { // API �
 		return nil, err
 	}
 
-	p, ex := req.Data["level1"]
-	if !ex {
-		return nil, errors.New("level1 404")
-	}
-	url, ex := p["url"]
-	if !ex {
-		return nil, errors.New("level1 url 404")
-	}
-
-	code, respBytes, err := urllib.Get(url.(string)).RandUserAgent().RandDisguisedIP().ByteRetry(3, 200)
+	code, respBytes, err := urllib.Get(req.Url).RandUserAgent().RandDisguisedIP().ByteRetry(3, 200)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -65,9 +50,7 @@ func spider(ctx context.Context, event DefineEvent) (*Request, error) { // API �
 		return nil, errors.New(string(respBytes))
 	}
 
-	req.Data["level2"] = map[string]interface{}{
-		"html": string(respBytes),
-	}
+	req.Data = respBytes
 
 	return &req, nil
 }
